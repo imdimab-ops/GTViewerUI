@@ -1,1 +1,1 @@
-# GTViewerUI
+# GTViewerUI User Interface (Qml)
