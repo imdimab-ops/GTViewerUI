@@ -79,6 +79,7 @@ function _showPassport(obj, path) {
     return null
 }
 
+/* !!!свойства каждого элемента obj обновляем из функции handleDataUpdate(arg) connectionsLogic.js */
 function updateData(obj, data) {
     if (!obj || !data) return
 

@@ -1,4 +1,4 @@
-// paramLogic.js - скрипт для работы с логикой и обновления UI аналоговых компонентов AI
+// paramLogicMTR.js - скрипт для работы с логикой и обновления UI электродвигателей Motor MTR см.PsTechEE
 .pragma library
 .import QtQml as QQml //импорт модуля QtQml, для доступа к Component при создании контексного меню и паспорта, т.к. JS его нет
 
@@ -36,25 +36,9 @@ function getModeColor(obj) {
 }
 
 function statusText(obj) {
-    if (obj.diagn !== 0) return "АВАРИЯ"
+    /* как парсить слово диагностики и блокировку смотрим библиотеку PsTechEE/MRT/Двигатель Regul */
+    if ((obj.diagn & 0x02) === 0) return "АВАРИЯ"    //bit1
     if (obj.block !== 0) return "БЛОК."  //
     if (obj.state === 2) return "РАБОТА"
     return "ОСТАНОВ"
 }
-
-function getProgressColor(obj) {
-    if (!obj) return "#2ecc71"
-    if (obj.stw & 0x02) return "#5b6262" //bit1 - Bad
-    if (obj.stw & 0x08) return "#ff0000" //bit2 - Alarm
-    if (obj.stw & 0x04) return "#ffA000" //bit3 - Warning
-    return "#2ecc71"
-}
-
-
-//Функция снятия визуализации на элементе (при удалении графиков)(визуализация в контекстном меню)
-function updateAddToChartIcon(obj, data) {
-    if (data.symbol === obj.symbol) {
-        obj.addTag = data.addTag
-    }
-}
-

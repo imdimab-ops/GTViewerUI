@@ -1,4 +1,4 @@
-/* Pump.qml - Pump unit (улитка + горизонтальные патрубки) */
+/* Pump.qml - Pump unit (улитка + горизонтальные патрубки) см. библиотеку PsTechEE/MRT/Двигатель Regul */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -19,17 +19,15 @@ Rectangle {
     property bool running: true
     property bool available: true
     property bool fault: false
-    property int mode: 20   //enum фактический режим управления
-    property int state: 20  //enum состояние
-    property int diagn: 0   //диагностика неисправностей
-    property int block: 25  //int в qml это 64х битные цифры
+    property int mode: 20   //enum фактический режим управления см.PsTechEE
+    property int state: 20  //enum состояние см.PsTechEE
+    property int diagn: 0   //диагностика неисправностей см.PsTechEE
+    property int block: 25  //int в qml это 64х битные цифры см.PsTechEE
     property real loading: 0.0
     property real nominalLoading: 100.0
     property string unit: "%"
     property string description: "Насосный агрегат"
     property string tagname: "pump1"
-    property string timestamp: ""
-    property bool sim: false
 
     signal emitAddToChart(var data)
     signal clicked()
@@ -396,7 +394,7 @@ Rectangle {
                 text: root.loading.toFixed(1)
                 font.pixelSize: 14
                 font.bold: true
-                font.italic: sim
+                font.italic: false
                 color: root.statusColor()
                 Layout.alignment: Qt.AlignVCenter
             }
