@@ -1,4 +1,4 @@
-/* Pump.qml - Pump unit (улитка + горизонтальные патрубки) см. библиотеку PsTechEE/MRT/Двигатель Regul */
+/* PumpLite.qml - Pump unit (улитка + горизонтальные патрубки) см. библиотеку PsTechEE/MRT/Двигатель Regul */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -6,8 +6,8 @@ import "./paramLogicMTR.js" as Logic
 
 Rectangle {
     id: root
-    width: 150
-    height: 75
+    width: 85
+    height: 65
     color: "#e8e8e8"
     radius: 5
     border.color: _defaultBorderColor
@@ -17,14 +17,14 @@ Rectangle {
     property string type: "MTR"
     property string name: "Насос"
     property string symbol: "H1"
-    property bool running: true
+    property bool running: false
     property bool block: false
     property bool fault: false
     property int e_mode: 20   //enum фактический режим управления см.PsTechEE
     property int e_state: 20  //enum состояние см.PsTechEE
     property int w_diagn: 0   //word диагностика неисправностей см.PsTechEE
     property int w_block: 25  //dword признаки запретов см.PsTechEE (int в qml это 64х битные числа)
-    property real loading: 0.0
+    property real loading: 45.2
     property real nominalLoading: 100.0
     property string unit: "%"
     property string description: "Насосный агрегат"
@@ -97,7 +97,7 @@ Rectangle {
     }
 
     ColumnLayout {
-        anchors { fill: parent; margins: 2 }
+        anchors { fill: parent; margins: 1 }
         spacing: 0
 
         // ============================================================
@@ -119,20 +119,15 @@ Rectangle {
                 Layout.alignment: Qt.AlignVCenter
                 Layout.preferredHeight: font.pixelSize + 2
             }
-
             Text {
-                text: root.name
+                text: root._statusText()
+                font.pixelSize: 9
                 font.bold: true
-                font.pixelSize: 12
-                color: "#555555"
-                Layout.alignment: Qt.AlignVCenter
+                color: root._statusColor()
                 Layout.fillWidth: true
-                Layout.preferredHeight: font.pixelSize + 2
+                Layout.alignment: Qt.AlignVCenter
                 elide: Text.ElideRight
-                maximumLineCount: 1
-                wrapMode: Text.NoWrap
             }
-
             // Индикатор местный/дистанционный
             Rectangle {
                 width: 13; height: 13
@@ -148,23 +143,22 @@ Rectangle {
                 }
             }
         }
-
         // ============================================================
         //  ЦЕНТРАЛЬНАЯ ОБЛАСТЬ — УЛИТКА + ДВА ГОРИЗОНТАЛЬНЫХ ПАТРУБКА
         // ============================================================
         Item {
             id: pumpArea
             Layout.fillWidth: true
-            Layout.preferredHeight: 40
-            Layout.minimumHeight: 40
-            Layout.maximumHeight: 40
+            Layout.preferredHeight: 30
+            Layout.minimumHeight: 30
+            Layout.maximumHeight: 30
             Layout.topMargin: 0
             Layout.bottomMargin: 0
 
             // ---------- ВСАСЫВАЮЩИЙ ПАТРУБОК (слева, горизонтальный) ----------
             Rectangle {
                 id: suctionPipe
-                x: -5
+                x: -2
                 y: pumpArea.height / 2 - 4
                 width: volute.x - x + 4
                 height: 8
@@ -175,9 +169,9 @@ Rectangle {
 
             // Фланец всасывания (утолщение у корпуса)
             Rectangle {
-                x: suctionPipe.x + suctionPipe.width - 5
+                x: suctionPipe.x + suctionPipe.width - 4
                 y: suctionPipe.y - 2
-                width: 5
+                width: 4
                 height: suctionPipe.height + 4
                 color: root._bodyShadow
                 border.color: "#555"
@@ -187,9 +181,9 @@ Rectangle {
             // ---------- НАПОРНЫЙ ПАТРУБОК (справа, горизонтальный) ----------
             Rectangle {
                 id: dischargePipe
-                x: volute.x + volute.width - 4
+                x: volute.x + volute.width - 3
                 y: pumpArea.height / 2 - 4
-                width: pumpArea.width - x + 5
+                width: pumpArea.width - x + 2
                 height: 8
                 color: root._pipeColor
                 border.color: root._bodyShadow
@@ -200,7 +194,7 @@ Rectangle {
             Rectangle {
                 x: dischargePipe.x
                 y: dischargePipe.y - 2
-                width: 5
+                width: 4
                 height: dischargePipe.height + 4
                 color: root._bodyShadow
                 border.color: "#555"
@@ -235,7 +229,7 @@ Rectangle {
                     border.color: root._bodyShadow
                     border.width: 1.5
                 }
-
+                // Утолщение улитки (выступ) — переход к напорному патрубку
                 // Внутренняя камера (тёмный круг)
                 Rectangle {
                     anchors.centerIn: parent
@@ -305,14 +299,14 @@ Rectangle {
             Row {
                 id: suctionFlow
                 x: suctionPipe.x + 3
-                y: suctionPipe.y + 2
+                y: suctionPipe.y + 2.5
                 spacing: 5
                 visible: _flowActive()
 
                 Repeater {
-                    model: Math.max(3, Math.floor((suctionPipe.width - 8) / 7))
+                    model: Math.max(3, Math.floor((suctionPipe.width - 8) / 6))
                     Rectangle {
-                        width: 3; height: 4
+                        width: 2; height: 3
                         radius: 1
                         color: root._liquidColor
                         opacity: 0.85
@@ -325,18 +319,17 @@ Rectangle {
                     }
                 }
             }
-
             Row {
                 id: dischargeFlow
-                x: dischargePipe.x + 8
-                y: dischargePipe.y + 2
-                spacing: 5
+                x: dischargePipe.x + 6
+                y: dischargePipe.y + 2.5
+                spacing: 4
                 visible: _flowActive()
 
                 Repeater {
-                    model: Math.max(3, Math.floor((dischargePipe.width - 10) / 7))
+                    model: Math.max(3, Math.floor((dischargePipe.width - 10) / 6))
                     Rectangle {
-                        width: 3; height: 4
+                        width: 2; height: 3
                         radius: 1
                         color: root._liquidColor
                         opacity: 0.9
@@ -350,12 +343,12 @@ Rectangle {
                 }
             }
 
-            // Стрелка направления потока на выходе
+            // ---------- СТРЕЛКА ПОТОКА под правым (напорным) патрубком ----------
             Canvas {
                 id: flowArrow
-                x: dischargePipe.x + dischargePipe.width - 25
-                y: dischargePipe.y + dischargePipe.height + 1
-                width: 12; height: 10
+                x: dischargePipe.x + dischargePipe.width - 14
+                y: dischargePipe.y + dischargePipe.height + 5
+                width: 10; height: 8
                 visible: _flowActive()
                 opacity: 0.85
                 onPaint: {
@@ -363,16 +356,16 @@ Rectangle {
                     ctx.reset()
                     ctx.strokeStyle = root._liquidColor
                     ctx.fillStyle = root._liquidColor
-                    ctx.lineWidth = 1.5
+                    ctx.lineWidth = 1.2
                     ctx.beginPath()
                     ctx.moveTo(1, 1)
-                    ctx.lineTo(11, 5)
-                    ctx.lineTo(1, 9)
+                    ctx.lineTo(9, 4)
+                    ctx.lineTo(1, 7)
                     ctx.stroke()
                     ctx.beginPath()
-                    ctx.moveTo(0, 5)
-                    ctx.lineTo(5, 2)
-                    ctx.lineTo(5, 8)
+                    ctx.moveTo(0, 4)
+                    ctx.lineTo(4, 2)
+                    ctx.lineTo(4, 6)
                     ctx.closePath()
                     ctx.fill()
                 }
@@ -384,36 +377,15 @@ Rectangle {
         // ============================================================
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 16
-            Layout.minimumHeight: 16
-            Layout.maximumHeight: 16
             Layout.topMargin: 0
             Layout.bottomMargin: 0
-            spacing: 2
-
-            Text {
-                text: root.loading.toFixed(1)
-                font.pixelSize: 14
-                font.bold: true
-                font.italic: false
-                color: root._statusColor()
-                Layout.alignment: Qt.AlignVCenter
-            }
-
-            Text {
-                text: root.unit
-                font.pixelSize: 10
-                color: "#777777"
-                Layout.alignment: Qt.AlignVCenter
-            }
-
+            spacing: 0
             // Прогресс-бар загрузки по току
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 6
-                radius: 3
+                Layout.preferredHeight: 3
+                radius: 2
                 color: "#d3d3d3"
-
                 Rectangle {
                     id: progressBar
                     width: root.nominalLoading > 0
@@ -424,15 +396,6 @@ Rectangle {
                     color: root._statusColor()
                     Behavior on width { NumberAnimation { duration: 60 } }
                 }
-            }
-
-            // Статус
-            Text {
-                text: root._statusText()
-                font.pixelSize: 9
-                font.bold: true
-                color: root._statusColor()
-                Layout.alignment: Qt.AlignVCenter
             }
         }
     }
