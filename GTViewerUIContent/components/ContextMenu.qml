@@ -19,7 +19,7 @@ Menu {
 
     function _showItem_1(obj) {
         if (!obj) return false
-        return obj.type === "AI"
+        return obj.type === "AI" | obj.type === "MTR"
     }
 
     //Заголовок

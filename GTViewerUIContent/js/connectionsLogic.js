@@ -108,6 +108,18 @@ function registerComponent(component) {
             _componentStoreMTR[componentId] = []
         }
         _componentStoreMTR[componentId].push(component) //добавляем компонент в массив
+        if (component.onEmitAddToChart && typeof component.onEmitAddToChart.connect === 'function') {
+            component.onEmitAddToChart.connect((data) => {
+                                                   _addCharForPlot(data)
+                                               });
+            if (_pglobalPlot) {
+                _pglobalPlot.fsetFillParameters({
+                                                    symbol: component.symbol,
+                                                    name: component.name,
+                                                    tagname: component.tagname
+                                                })
+            }
+        }
         break
     default:
         console.warn("connectionsLogic.js", "Unknown component:", component.type, component.symbol, component.name)
@@ -131,25 +143,13 @@ function handleDataUpdateAI(arg) {
     for (var i = 0; i < ids.length; i++) {
         var componentId = ids[i];
         var data = arg[componentId];
-        if (data === undefined || data === null) continue;
+        if (data === null || data === undefined) continue;
 
         var components = store[componentId];
         for (var j = 0; j < components.length; j++) {
             ParamLogicAI.updateData(components[j], data) //обновляем компоненты на прямую через JS а не через QML
         }
     }
-
-    //Object.entries(_componentStoreAI) - преобразует объект в массив пар [ключ, значение]
-    // for (const [componentId, components] of Object.entries(_componentStore)) { //components - элемент массива _componentStore, так же является массивом
-    //     if (arg[componentId]) {
-    //         //обновляем ВСЕ компоненты с этим ID
-    //         components.forEach(component => {
-    //                                if (component.updateData) {
-    //                                    component.updateData(arg[componentId])
-    //                                }
-    //                            })
-    //     }
-    // }
     //возвращаем состояния
     return {
         rotateOn: arg.ST50 && Number(arg.ST50.pv) >= 300,
@@ -162,18 +162,20 @@ function handleDataUpdateAI(arg) {
     }
 }
 
-//функция обновления данных Motor, Pump, Vent и тп
+//функция обновления Motor, Pump, Vent и тп
 function handleDataUpdateMTR(arg) {
+    if (!arg) return;
     var store = _componentStoreMTR;
-    var ids = Object.keys(store);
-    for (var i = 0; i < ids.length; i++) {
-        var componentId = ids[i];
-        var data = arg[componentId];
-        if (data === undefined || data === null) continue;
+/* ищем по полям в переданной структере arg, и обновляем соответствующие компоненты */
+    for (var id in arg) {
+        var data = arg[id];
+        if (data === null || data === undefined) continue;
 
-        var components = store[componentId];
+        var components = store[id];
+        if (!components) continue;
+
         for (var j = 0; j < components.length; j++) {
-            ParamLogicMTR.updateData(components[j], data) //обновляем компоненты на прямую через JS а не через QML
+            ParamLogicMTR.updateData(components[j], data);
         }
     }
 }

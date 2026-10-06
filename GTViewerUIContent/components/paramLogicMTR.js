@@ -9,27 +9,77 @@ var _contextMenuInstance = null //экземпляр контекстного м
 
 //конфигурация свойств для обновления (_propertyConfig — это объект-«схема», где для каждого свойства задана функция-преобразователь)
 var _propertyConfig = {
-    e_mode: Number,
-    e_state: Number,
-    w_diagn: Number,
-    w_block: Number,
+    mode: Number,
+    state: Number,
+    ctrlw: Number,
+    diagnw: Number,
+    blockw: Number,
     unit: v => v,
     description: v => v,
     tagname: v => v
 }
 
+/* Показываем паспорт параметра */
+function _showPassport(obj, path) {
+    if (!obj) return null
+
+    var passport = _passportStore[obj]
+    if (passport && passport.visible) {
+        passport.raise()
+        passport.requestActivate()
+        return passport
+    }
+
+    //создаем новый паспорт
+    var component = Qt.createComponent(path || "PassportParamMTR.qml")
+    if (component.status === QQml.Component.Ready) {
+        passport = component.createObject(obj)
+        if (passport) {
+            passport.updateData({
+                                    name: obj.name,
+                                    symbol: obj.symbol,
+                                    running: obj.running,
+                                    block: obj.block,
+                                    fault: obj.fault,
+                                    mode: obj.mode,
+                                    state: obj.state,
+                                    ctrlw: obj.ctrlw,
+                                    diagnw: obj.diagnw,
+                                    blockw: obj.blockw,
+                                    loading: obj.loading,
+                                    nominalLoading: obj.nominalLoading,
+                                    timestamp: obj.timestamp,
+                                    unit: obj.unit,
+                                    description: obj.description,
+                                    tagname: obj.tagname,
+                                    location: "ГТЭС"
+                                })
+
+            passport.closing.connect(function() {
+                _passportStore[obj] = null
+                passport.destroy()
+            })
+
+            _passportStore[obj] = passport
+            passport.show()
+            return passport
+        }
+    }
+    return null
+}
+
 /* функция обновления состояния двигателя (работа, отказ, ошибка) */
-function _updateState(obj, key) {
+function _updateStatus(obj, key) {
     if (!obj || !key) return
     switch (key) {
-    case 'e_state':
-        obj.running = (obj.e_state === 2) //см.PsTechEE MTR ENUM_MTR_STATE
+    case 'state':
+        obj.running = (obj.state === 2) //см.PsTechEE MTR ENUM_MTR_STATE
         break
-    case 'w_diagn':
-        obj.fault = (obj.w_diagn & 0x01) === 0 //маска bit0 - ОК (Все в норме или выбран режим "Ремонтный") см.PsTechEE MTR DIAGN
+    case 'diagnw':
+        obj.fault = (obj.diagnw & 0x01) === 0 //маска bit0 - ОК (Все в норме или выбран режим "Ремонтный") см.PsTechEE MTR DIAGN
         break
-    case 'w_block':
-        /* g 'w_block' отображаем в паспорте и не взводим "block",
+    case 'blockw':
+        /* g 'blockw' отображаем в паспорте и не взводим "block",
          * тк у Regul это "Признаки действующих технологических команд и запретов" */
         break
     default:
@@ -44,34 +94,30 @@ function updateData(obj, data) {
     //обновляем свойства
     Object.keys(_propertyConfig).forEach(function(key) { //forEach - обновляем каждый элемент массива propertyConfig
         if (data[key] !== undefined) {
-            var newVal = _propertyConfig[key](data[key])    //_propertyConfig["e_mode"] -> Number(data["e_mode"]) -> var newVal = 42
+            var newVal = _propertyConfig[key](data[key])    //_propertyConfig["mode"] -> Number(data["mode"]) -> var newVal = 42
             if (obj[key] !== newVal) {
                 obj[key] = newVal
-                _updateState(obj, key)  //обновляем по ключам состояние двигателя
+                _updateStatus(obj, key)  //обновляем по ключам состояние двигателя
             }
         }
     })
 
     //oбновляем паспорт если открыт
-    // var passport = _passportStore[obj]
-    // if (passport && passport.visible) {
-    //     passport.updateData({
-    //                             pv: obj.pv,
-    //                             ah: obj.ah,
-    //                             ah2: obj.ah2,
-    //                             al: obj.al,
-    //                             al2: obj.al2,
-    //                             hyst: obj.hyst,
-    //                             wh: obj.wh,
-    //                             wl: obj.wl,
-    //                             lrv: obj.lrv,
-    //                             urv: obj.urv,
-    //                             bcw: obj.bcw,
-    //                             stw: obj.stw,
-    //                             sim: obj.sim,
-    //                             timestamp: obj.timestamp,
-    //                         })
-    // }
+    var passport = _passportStore[obj]
+    if (passport && passport.visible) {
+        passport.updateData({
+                                running: obj.running,
+                                block: obj.block,
+                                fault: obj.fault,
+                                mode: obj.mode,
+                                state: obj.state,
+                                ctrlw: obj.ctrlw,
+                                diagnw: obj.diagnw,
+                                blockw: obj.blockw,
+                                loading: obj.loading,
+                                timestamp: obj.timestamp,
+                            })
+    }
 }
 
 /* отображаем контествное меню */
@@ -93,20 +139,21 @@ function showContextMenu(obj, path) {
             contextMenu.targetObject = obj
             contextMenu.name = obj.name;
             contextMenu.symbol = obj.symbol;
+            contextMenu.addToChart = obj.addTag;
 
             //Подключаем сигналы
-            // contextMenu.emitAddToChart.connect(function(symbolFromMenu) {
-            //     obj.addTag = !obj.addTag
-            //     var data = {
-            //         addTag: obj.addTag,
-            //         name: obj.name,
-            //         symbol: obj.symbol,
-            //         unit: obj.unit,
-            //         description: obj.description,
-            //         tagname: obj.tagname
-            //     }
-            //     obj.emitAddToChart(data)
-            // });
+            contextMenu.emitAddToChart.connect(function(symbolFromMenu) {
+                obj.addTag = !obj.addTag
+                var data = {
+                    addTag: obj.addTag,
+                    name: obj.name,
+                    symbol: obj.symbol,
+                    unit: obj.unit,
+                    description: obj.description,
+                    tagname: obj.tagname
+                }
+                obj.emitAddToChart(data)
+            });
             contextMenu.emitShowPassport.connect(function(symbolFromMenu) {
                 _showPassport(obj, "PassportParamMTR.qml")
             });
@@ -123,13 +170,31 @@ function showContextMenu(obj, path) {
     return null
 }
 
+//преобразуем слово в биты и представляем в качестве строки для отладки
+function wordsToBitsToString(value, bitsCount = 16) {
+    let result = '';
+    for (let i = bitsCount - 1; i >= 0; i--) {
+        result += (value >> i) & 1;
+        if (i % 4 === 0 && i !== 0) result += ' '; //группировка по 4 бита
+    }
+    return result;
+}
+
 function getBit(value, bitPosition) {
     return (value >> bitPosition) & 1; //сдвигаем биты числа вправо на bitPosition позиций & 1 - побитовое И с числом 1
 }
 
+//Функция снятия визуализации на элементе (при удалении графиков)(визуализация в контекстном меню)
+function updateAddToChartIcon(obj, data) {
+    if (data.symbol === obj.symbol) {
+        obj.addTag = data.addTag
+    }
+}
+
+/* расшифровку см.PsTechEE MTR - выходные пераметры */
 function getMode(obj) {
-    if (!obj) return "!"
-    switch (obj.e_mode) {
+    if (!obj) return "undefined"
+    switch (obj.mode) {
     case 0: return "R" //Remote
     case 1: return "A" //Auto
     case 2: return "T" //Test
@@ -141,7 +206,7 @@ function getMode(obj) {
 
 function getModeColor(obj) {
     if (!obj) return "transparent";
-    switch (obj.e_mode) {
+    switch (obj.mode) {
     case 0: return "#4A90D9"; // Remote - синий
     case 1: return "#3ab842"; // Auto - зелёный
     case 2: return "#ffA000"; // Test - оранжевый
@@ -149,4 +214,85 @@ function getModeColor(obj) {
     case 4: return "#9B59B6"; // Local - фиолетовый
     default: return "transparent"; // неизвестный режим - белый
     }
+}
+
+function getModeText(obj) {
+    if (!obj) return "undefined"
+    switch (obj.mode) {
+    case 0: return "Remote - дистанционный"   //Remote
+    case 1: return "Auto - автоматический"    //Auto
+    case 2: return "Test - опробование"       //Test
+    case 3: return "Repai - ремонтныйr"       //Repair
+    case 4: return "Local - местный"          //Local
+    default: return "mode: " + obj.mode; // неизвестный режим
+    }
+}
+
+function getCtrlwText(obj) {
+    if (!obj) return "undefined"
+    /*bit0*/    if (obj.ctrlw & 0x01) return "Команда «Включить»"
+    /*bit1*/    if (obj.ctrlw & 0x02) return "Команда «Отключить»"
+    return "Unknown"
+}
+
+function getStateText(obj) {
+    if (!obj) return "undefined"
+    switch (obj.state) {
+    case 0: return "Unknown - неопределенное"
+    case 1: return "Off - отключен"
+    case 2: return "On - включен"
+    case 3: return "Nowork - нерабочее"
+    default: return "state: " + obj.state; // неизвестный режим
+    }
+}
+
+function getDiagnText(obj) {
+    if (!obj) return "undefined"
+    /*bit0*/    if (obj.diagnw & 0x01) return "ОК"
+    /*bit1*/    if (obj.diagnw & 0x02) return "Обесточен"
+    /*bit2*/    if (obj.diagnw & 0x004) return "Неопределенное состояние"
+    /*bit3*/    if (obj.diagnw & 0x008) return "Нерабочее состояние"
+    /*bit4*/    if (obj.diagnw & 0x010) return "Не включился/Не отключился"
+    /*bit5*/    if (obj.diagnw & 0x020) return "Несанкционированное включение/отключение"
+    /*bit6*/    if (obj.diagnw & 0x040) return "Нет оперативного напряжения"
+    /*bit7*/    if (obj.diagnw & 0x080) return "Нет высокого напряжения"
+    /*bit8*/    if (obj.diagnw & 0x100) return "Неисправность"
+    return "Unknown"
+}
+
+function getBlockText(obj) {
+    if (!obj) return "undefined"
+    /*bit0 */   if (obj.blockw & 0x00000001) return "Блокировка включения BS1306.2 Пожар в отсеке"
+    /*bit1 */   if (obj.blockw & 0x00000002) return "Неисправность..."
+    /*bit2 */   if (obj.blockw & 0x00000004) return "Неисправность..."
+    /*bit3 */   if (obj.blockw & 0x00000008) return "Блокировка включения"
+    /*bit4 */   if (obj.blockw & 0x00000010) return "Блокировка включения"
+    /*bit5 */   if (obj.blockw & 0x00000020) return "Блокировка включения"
+    /*bit6 */   if (obj.blockw & 0x00000040) return "..."
+    /*bit7 */   if (obj.blockw & 0x00000080) return "..."
+    /*bit8 */   if (obj.blockw & 0x00000100) return "..."
+    /*bit9 */   if (obj.blockw & 0x00000200) return "..."
+    /*bit10*/   if (obj.blockw & 0x00000400) return "..."
+    /*bit11*/   if (obj.blockw & 0x00000800) return "..."
+    /*bit12*/   if (obj.blockw & 0x00001000) return "..."
+    /*bit13*/   if (obj.blockw & 0x00002000) return "..."
+    /*bit14*/   if (obj.blockw & 0x00004000) return "..."
+    /*bit15*/   if (obj.blockw & 0x00008000) return "..."
+    /*bit16*/   if (obj.blockw & 0x00010000) return "..."
+    /*bit17*/   if (obj.blockw & 0x00020000) return "..."
+    /*bit18*/   if (obj.blockw & 0x00040000) return "..."
+    /*bit19*/   if (obj.blockw & 0x00080000) return "..."
+    /*bit20*/   if (obj.blockw & 0x00100000) return "..."
+    /*bit21*/   if (obj.blockw & 0x00200000) return "..."
+    /*bit22*/   if (obj.blockw & 0x00400000) return "..."
+    /*bit23*/   if (obj.blockw & 0x00800000) return "..."
+    /*bit24*/   if (obj.blockw & 0x01000000) return "..."
+    /*bit25*/   if (obj.blockw & 0x02000000) return "..."
+    /*bit26*/   if (obj.blockw & 0x04000000) return "..."
+    /*bit27*/   if (obj.blockw & 0x08000000) return "..."
+    /*bit28*/   if (obj.blockw & 0x10000000) return "..."
+    /*bit29*/   if (obj.blockw & 0x20000000) return "..."
+    /*bit30*/   if (obj.blockw & 0x40000000) return "..."
+    /*bit31*/   if (obj.blockw & 0x80000000) return "Команда из алгоритма"
+    return "Unknown"
 }

@@ -17,22 +17,23 @@ Rectangle {
     property string type: "MTR"
     property string name: "Насос"
     property string symbol: "H1"
-    property bool running: true
+    property bool running: false
     property bool block: false
     property bool fault: false
-    property int e_mode: 20   //enum фактический режим управления см.PsTechEE
-    property int e_state: 20  //enum состояние см.PsTechEE
-    property int w_diagn: 0   //word диагностика неисправностей см.PsTechEE
-    property int w_block: 25  //dword признаки запретов см.PsTechEE (int в qml это 64х битные числа)
+    property int mode: 25   //enum фактический режим управления см.PsTechEE
+    property int state: 25  //enum состояние см.PsTechEE
+    property int ctrlw: 25  //Byte сигналы управления на ВУ см.PsTechEE
+    property int diagnw: 25   //word диагностика неисправностей см.PsTechEE
+    property real blockw: 25  //dword признаки запретов см.PsTechEE (int в qml это 64х битные числа)
     property real loading: 0.0
     property real nominalLoading: 100.0
     property string unit: "%"
     property string description: "Насосный агрегат"
     property string tagname: "pump1"
+    property bool addTag: false       // True - тег добавлен на график, false - нет
 
-    signal emitAddToChart(var data)
+    signal emitAddToChart (var data)
     signal clicked()
-    signal toggleRequested()
 
     // ==== Private ====
     property color _defaultBorderColor: "#cccccc"

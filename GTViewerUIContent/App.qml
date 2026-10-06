@@ -1,5 +1,5 @@
 import QtQuick
-import GTSclientUI
+import GTViewerUI
 import QtQuick.Controls
 
 Window {
