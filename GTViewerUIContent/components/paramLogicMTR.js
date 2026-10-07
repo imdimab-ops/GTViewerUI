@@ -184,13 +184,6 @@ function getBit(value, bitPosition) {
     return (value >> bitPosition) & 1; //сдвигаем биты числа вправо на bitPosition позиций & 1 - побитовое И с числом 1
 }
 
-//Функция снятия визуализации на элементе (при удалении графиков)(визуализация в контекстном меню)
-function updateAddToChartIcon(obj, data) {
-    if (data.symbol === obj.symbol) {
-        obj.addTag = data.addTag
-    }
-}
-
 /* расшифровку см.PsTechEE MTR - выходные пераметры */
 function getMode(obj) {
     if (!obj) return "undefined"

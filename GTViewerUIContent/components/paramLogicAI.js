@@ -191,11 +191,3 @@ function getProgressColor(obj) {
 function getAlarm(obj) {
     return (obj.stw & 0x02) || (obj.stw & 0x04) || (obj.stw & 0x08)
 }
-
-//Функция снятия визуализации на элементе (при удалении графиков)(визуализация в контекстном меню)
-function updateAddToChartIcon(obj, data) {
-    if (data.symbol === obj.symbol) {
-        obj.addTag = data.addTag
-    }
-}
-
