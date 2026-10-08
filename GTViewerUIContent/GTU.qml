@@ -780,7 +780,7 @@ Item {
             }
             PumpLite {
                 name: "Насос масла"
-                symbol: "H201"
+                symbol: "M201"
                 Component.onCompleted: Logic.registerComponent(this)
                 scale: 0.80
                 anchors {
@@ -792,7 +792,7 @@ Item {
             }
             PumpLite {
                 name: "Насос масла"
-                symbol: "H202"
+                symbol: "M202"
                 Component.onCompleted: Logic.registerComponent(this)
                 scale: 0.80
                 anchors {

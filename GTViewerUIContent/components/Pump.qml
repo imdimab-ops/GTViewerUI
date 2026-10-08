@@ -22,17 +22,19 @@ Rectangle {
     property bool fault: false
     property int mode: 25   //enum фактический режим управления см.PsTechEE
     property int state: 25  //enum состояние см.PsTechEE
-    property int ctrlw: 25  //Byte сигналы управления на ВУ см.PsTechEE
+    property int ctlw: 25   //byte сигналы управления на ВУ см.PsTechEE
     property int diagnw: 25   //word диагностика неисправностей см.PsTechEE
     property real blockw: 25  //dword признаки запретов см.PsTechEE (int в qml это 64х битные числа)
-    property real loading: 0.0
-    property real nominalLoading: 100.0
+    property real load: 0.0
+    property real nominalLoad: 100.0
+    property real worktime: 25   //ч
+    property string timestamp: ""
     property string unit: "%"
     property string description: "Насосный агрегат"
     property string tagname: "pump1"
     property bool addTag: false       // True - тег добавлен на график, false - нет
 
-    signal emitAddToChart (var data)
+    signal emitAddToChart(var data)
     signal clicked()
 
     // ==== Private ====
@@ -393,7 +395,7 @@ Rectangle {
             spacing: 2
 
             Text {
-                text: root.loading.toFixed(1)
+                text: root.load.toFixed(1)
                 font.pixelSize: 14
                 font.bold: true
                 font.italic: false
@@ -417,8 +419,8 @@ Rectangle {
 
                 Rectangle {
                     id: progressBar
-                    width: root.nominalLoading > 0
-                        ? Math.max(0, Math.min(parent.width * (root.loading / root.nominalLoading), parent.width))
+                    width: root.nominalLoad > 0
+                        ? Math.max(0, Math.min(parent.width * (root.load / root.nominalLoad), parent.width))
                         : 0
                     height: parent.height
                     radius: 3

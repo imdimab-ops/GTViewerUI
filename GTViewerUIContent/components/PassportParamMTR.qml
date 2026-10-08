@@ -1,6 +1,6 @@
 /* components/PassportParamMTR.qml Паспорт параметра исполнительного механизма (MTR) */
 import QtQuick
-import QtQuick.Controls
+import QtQuick.Controls.Fusion
 import QtQuick.Layouts
 import "./paramLogicMTR.js" as Logic
 
@@ -22,11 +22,12 @@ ApplicationWindow {
     property bool fault: false              // Неисправность
     property int mode: 0                    // Фактический режим управления (enum PsTechEE)
     property int state: 0                   // Состояние (enum PsTechEE)
-    property int ctrlw: 0                   // Byte сигналы управления на ВУ см.PsTechEE
-    property int diagnw: 0                  // Word диагностики неисправностей
-    property real blockw: 0                 // Dword признаки запретов
-    property real loading: 0.0              // Токовая загрузка
-    property real nominalLoading: 100.0     // Номинальная загрузка
+    property int ctlw: 0                    // byte сигналы управления на ВУ см.PsTechEE
+    property int diagnw: 0                  // word диагностики неисправностей
+    property real blockw: 0                 // dword признаки запретов
+    property real load: 0.0              // Токовая загрузка
+    property real nominalLoad: 100.0     // Номинальная загрузка
+    property real worktime: 0            //ч
     property string unit: "%"               // Единицы измерения
     property string description: "descr"
     property string tagname: "tag"
@@ -43,10 +44,11 @@ ApplicationWindow {
             fault = newData.fault !== undefined ? newData.fault : fault;
             mode = newData.mode !== undefined ? newData.mode : mode;
             state = newData.state !== undefined ? newData.state : state;
-            ctrlw = newData.ctrlw !== undefined ? newData.ctrlw : ctrlw;
+            ctlw = newData.ctlw !== undefined ? newData.ctlw : ctlw;
             diagnw = newData.diagnw !== undefined ? newData.diagnw : diagnw;
             blockw = newData.blockw !== undefined ? newData.blockw : blockw;
-            loading = newData.loading !== undefined ? newData.loading : loading;
+            load = newData.load !== undefined ? newData.load : load;
+            worktime = newData.worktime !== undefined ? newData.worktime : worktime;
             unit = newData.unit !== undefined ? newData.unit : unit;
             description = newData.description !== undefined ? newData.description : description;
             tagname = newData.tagname !== undefined ? newData.tagname : tagname;
@@ -196,7 +198,7 @@ ApplicationWindow {
                                     spacing: 5
 
                                     Text {
-                                        text: loading.toFixed(1)
+                                        text: load.toFixed(1)
                                         font.pixelSize: 28
                                         font.bold: true
                                         color: _getStatusColor()
@@ -231,8 +233,8 @@ ApplicationWindow {
                                     color: "#EEEEEE"
 
                                     Rectangle {
-                                        width: nominalLoading > 0
-                                               ? Math.max(0, Math.min(parent.width * (loading / nominalLoading), parent.width))
+                                        width: nominalLoad > 0
+                                               ? Math.max(0, Math.min(parent.width * (load / nominalLoad), parent.width))
                                                : 0
                                         height: parent.height
                                         radius: 6
@@ -254,7 +256,7 @@ ApplicationWindow {
                                     }
 
                                     Text {
-                                        text: nominalLoading.toFixed(0)
+                                        text: nominalLoad.toFixed(0)
                                         font.pixelSize: 9
                                         color: "#999999"
                                         Layout.alignment: Qt.AlignRight
@@ -447,7 +449,7 @@ ApplicationWindow {
                     }
                     Item {}
 
-                    // Строка 7 — ctrlw
+                    // Строка 7 — ctlw
                     Label {
                         text: "Сигналы управления:"
                         font.pixelSize: 12
@@ -457,6 +459,7 @@ ApplicationWindow {
                     }
                     Frame {
                         Layout.fillWidth: true
+                        Layout.columnSpan: 2
                         padding: 8
 
                         background: Rectangle {
@@ -467,13 +470,13 @@ ApplicationWindow {
                         }
                         ColumnLayout {
                             Label {
-                                text: "dec: " + ctrlw
+                                text: "dec: " + ctlw
                                 font.pixelSize: 12
                                 font.family: "monospace"
                                 color: "#333333"
                             }
                             Label {
-                                text: "bits: " +  Logic.wordsToBitsToString(ctrlw, 8)
+                                text: "bits: " +  Logic.wordsToBitsToString(ctlw, 8)
                                 font.pixelSize: 12
                                 font.family: "monospace"
                                 color: "#333333"
@@ -486,7 +489,6 @@ ApplicationWindow {
                             }
                         }
                     }
-                    Item {}
 
                     // Строка 8 — diagnw
                     Label {
@@ -498,6 +500,7 @@ ApplicationWindow {
                     }
                     Frame {
                         Layout.fillWidth: true
+                        Layout.columnSpan: 2
                         padding: 8
 
                         background: Rectangle {
@@ -527,7 +530,6 @@ ApplicationWindow {
                             }
                         }
                     }
-                    Item {}
 
                     // Строка 9 — blockw
                     Label {
@@ -539,6 +541,7 @@ ApplicationWindow {
                     }
                     Frame {
                         Layout.fillWidth: true
+                        Layout.columnSpan: 2
                         padding: 8
 
                         background: Rectangle {
@@ -568,7 +571,6 @@ ApplicationWindow {
                             }
                         }
                     }
-                    Item {}
 
                     // Строка 10 — единицы
                     Label {
@@ -578,10 +580,25 @@ ApplicationWindow {
                         color: "#666666"
                         Layout.alignment: Qt.AlignRight
                     }
-                    Label {
-                        text: unit
-                        font.pixelSize: 12
-                        color: "#333333"
+                    RowLayout {
+                        Layout.alignment: Qt.AlignLeft
+                        Label {
+                            text: unit
+                            font.pixelSize: 12
+                            color: "#333333"
+                        }
+                        Item { width: 40}
+                        Label {
+                            text: "Наработка, ч:"
+                            font.pixelSize: 12
+                            font.bold: true
+                            color: "#666666"
+                        }
+                        Label {
+                            text: worktime
+                            font.pixelSize: 12
+                            color: "#333333"
+                        }
                     }
                     Item {}
 
@@ -618,6 +635,7 @@ ApplicationWindow {
                         elide: Text.ElideRight
                         Layout.columnSpan: 2
                     }
+                    Item {}
                 }
             }
 

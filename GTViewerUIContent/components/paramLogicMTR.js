@@ -11,9 +11,12 @@ var _contextMenuInstance = null //экземпляр контекстного м
 var _propertyConfig = {
     mode: Number,
     state: Number,
-    ctrlw: Number,
+    ctlw: Number,
     diagnw: Number,
     blockw: Number,
+    load: Number,
+    worktime: Number,
+    timestamp: v => v,
     unit: v => v,
     description: v => v,
     tagname: v => v
@@ -43,11 +46,12 @@ function _showPassport(obj, path) {
                                     fault: obj.fault,
                                     mode: obj.mode,
                                     state: obj.state,
-                                    ctrlw: obj.ctrlw,
+                                    ctlw: obj.ctlw,
                                     diagnw: obj.diagnw,
                                     blockw: obj.blockw,
-                                    loading: obj.loading,
-                                    nominalLoading: obj.nominalLoading,
+                                    load: obj.load,
+                                    nominalLoad: obj.nominalLoad,
+                                    worktime: obj.worktime,
                                     timestamp: obj.timestamp,
                                     unit: obj.unit,
                                     description: obj.description,
@@ -111,10 +115,11 @@ function updateData(obj, data) {
                                 fault: obj.fault,
                                 mode: obj.mode,
                                 state: obj.state,
-                                ctrlw: obj.ctrlw,
+                                ctlw: obj.ctlw,
                                 diagnw: obj.diagnw,
                                 blockw: obj.blockw,
-                                loading: obj.loading,
+                                load: obj.load,
+                                worktime: obj.worktime,
                                 timestamp: obj.timestamp,
                             })
     }
@@ -215,7 +220,7 @@ function getModeText(obj) {
     case 0: return "Remote - дистанционный"   //Remote
     case 1: return "Auto - автоматический"    //Auto
     case 2: return "Test - опробование"       //Test
-    case 3: return "Repai - ремонтныйr"       //Repair
+    case 3: return "Repair - ремонтный"       //Repair
     case 4: return "Local - местный"          //Local
     default: return "mode: " + obj.mode; // неизвестный режим
     }
@@ -223,15 +228,15 @@ function getModeText(obj) {
 
 function getCtrlwText(obj) {
     if (!obj) return "undefined"
-    /*bit0*/    if (obj.ctrlw & 0x01) return "Команда «Включить»"
-    /*bit1*/    if (obj.ctrlw & 0x02) return "Команда «Отключить»"
-    return "Unknown"
+    /*bit0*/    if (obj.ctlw & 0x01) return "Команда «Включить»"
+    /*bit1*/    if (obj.ctlw & 0x02) return "Команда «Отключить»"
+    return "unknown"
 }
 
 function getStateText(obj) {
     if (!obj) return "undefined"
     switch (obj.state) {
-    case 0: return "Unknown - неопределенное"
+    case 0: return "unknown - неопределенное"
     case 1: return "Off - отключен"
     case 2: return "On - включен"
     case 3: return "Nowork - нерабочее"
@@ -250,7 +255,7 @@ function getDiagnText(obj) {
     /*bit6*/    if (obj.diagnw & 0x040) return "Нет оперативного напряжения"
     /*bit7*/    if (obj.diagnw & 0x080) return "Нет высокого напряжения"
     /*bit8*/    if (obj.diagnw & 0x100) return "Неисправность"
-    return "Unknown"
+    return "unknown"
 }
 
 function getBlockText(obj) {
@@ -287,5 +292,5 @@ function getBlockText(obj) {
     /*bit29*/   if (obj.blockw & 0x20000000) return "..."
     /*bit30*/   if (obj.blockw & 0x40000000) return "..."
     /*bit31*/   if (obj.blockw & 0x80000000) return "Команда из алгоритма"
-    return "Unknown"
+    return "unknown"
 }
