@@ -17,24 +17,32 @@ Rectangle {
     property string type: "MTR"
     property string name: "Насос"
     property string symbol: "H1"
-    property bool running: false
+    property bool running: true
     property bool block: false
     property bool fault: false
     property int mode: 25   //enum фактический режим управления см.PsTechEE
     property int state: 25  //enum состояние см.PsTechEE
     property int ctlw: 25   //byte сигналы управления на ВУ см.PsTechEE
-    property int diagnw: 25   //word диагностика неисправностей см.PsTechEE
-    property real blockw: 25  //dword признаки запретов см.PsTechEE (int в qml это 64х битные числа)
+    property int diagnw: 25 //word диагностика неисправностей см.PsTechEE
+    property real blockw: 25 //dword признаки запретов см.PsTechEE (int в qml это 64х битные числа)
     property string diagnd: "descr"
     property string blockd: "descr"
-    property real load: 0.0
+    property real load: 20.0
     property real nominalLoad: 100.0
     property real worktime: 25   //ч
     property string timestamp: ""
     property string unit: "%"
     property string description: "Насосный агрегат"
     property string tagname: "pump1"
+    property bool exist_freq: true    // Наличие датчика тока/частоты true - есть, false - нету
     property bool addTag: false       // True - тег добавлен на график, false - нет
+
+    // Направление потока:
+    //   "right" — вход слева,  выход справа
+    //   "left"  — вход справа, выход слева
+    // Любое значение, отличное от "left", трактуется как "right".
+    property string flowDirection: "right"
+
 
     signal emitAddToChart(var data)
     signal clicked()
@@ -159,12 +167,20 @@ Rectangle {
         // ============================================================
         Item {
             id: pumpArea
+            width: 146
             Layout.fillWidth: true
             Layout.preferredHeight: 40
             Layout.minimumHeight: 40
             Layout.maximumHeight: 40
             Layout.topMargin: 0
             Layout.bottomMargin: 0
+
+            // Зеркалим всю гидравлику при направлении "left".
+            transform: Scale {
+                origin.x: pumpArea.width / 2
+                origin.y: pumpArea.height / 2
+                xScale: root.flowDirection !== "left" ? 1 : -1
+            }
 
             // ---------- ВСАСЫВАЮЩИЙ ПАТРУБОК (слева, горизонтальный) ----------
             Rectangle {
@@ -307,50 +323,80 @@ Rectangle {
             }
 
             // ---------- АНИМАЦИЯ ПОТОКА ----------
-            Row {
+            // Бегущие точки в клип-контейнере по размеру патрубка.
+            // В локальных координатах обе линии текут в +x
+            // (к насосу на всасывании, от насоса на напоре).
+            // При flowDirection === "left" весь блок зеркалится
+
+            // ----- Поток во всасывающем патрубке -----
+            Item {
                 id: suctionFlow
-                x: suctionPipe.x + 3
-                y: suctionPipe.y + 2
-                spacing: 5
+                x: suctionPipe.x
+                y: suctionPipe.y
+                width: suctionPipe.width
+                height: suctionPipe.height
+                clip: true
                 visible: _flowActive()
 
-                Repeater {
-                    model: Math.max(3, Math.floor((suctionPipe.width - 8) / 7))
-                    Rectangle {
-                        width: 3; height: 4
-                        radius: 1
-                        color: root._liquidColor
-                        opacity: 0.85
-                        SequentialAnimation on opacity {
-                            running: suctionFlow.visible
-                            loops: Animation.Infinite
-                            NumberAnimation { from: 0.2; to: 1.0; duration: 400 }
-                            NumberAnimation { from: 1.0; to: 0.2; duration: 400 }
+                Row {
+                    id: suctionFlowRow
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 5
+
+                    Repeater {
+                        // покрываем ширину + один период с запасом
+                        model: Math.ceil((suctionFlow.width + 8) / 8) + 1
+                        Rectangle {
+                            width: 3; height: 4
+                            radius: 1
+                            color: root._liquidColor
+                            opacity: 0.85
                         }
+                    }
+
+                    // Плавное «втягивание» к насосу
+                    NumberAnimation on x {
+                        running: _flowActive()
+                        loops: Animation.Infinite
+                        from: -8
+                        to: 0
+                        duration: 400
                     }
                 }
             }
 
-            Row {
+            // ----- Поток в напорном патрубке -----
+            Item {
                 id: dischargeFlow
-                x: dischargePipe.x + 8
-                y: dischargePipe.y + 2
-                spacing: 5
+                x: dischargePipe.x
+                y: dischargePipe.y
+                width: dischargePipe.width
+                height: dischargePipe.height
+                clip: true
                 visible: _flowActive()
 
-                Repeater {
-                    model: Math.max(3, Math.floor((dischargePipe.width - 10) / 7))
-                    Rectangle {
-                        width: 3; height: 4
-                        radius: 1
-                        color: root._liquidColor
-                        opacity: 0.9
-                        SequentialAnimation on opacity {
-                            running: dischargeFlow.visible
-                            loops: Animation.Infinite
-                            NumberAnimation { from: 0.2; to: 1.0; duration: 300 }
-                            NumberAnimation { from: 1.0; to: 0.2; duration: 300 }
+                Row {
+                    id: dischargeFlowRow
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 5
+
+                    Repeater {
+                        model: Math.ceil((dischargeFlow.width + 8) / 8) + 1
+                        Rectangle {
+                            width: 3; height: 4
+                            radius: 1
+                            color: root._liquidColor
+                            opacity: 0.9
                         }
+                    }
+
+                    // Напор быстрее всасывания — визуальный «разгон» на выходе
+                    NumberAnimation on x {
+                        running: _flowActive()
+                        loops: Animation.Infinite
+                        from: -8
+                        to: 0
+                        duration: 350
                     }
                 }
             }
@@ -403,6 +449,7 @@ Rectangle {
                 font.italic: false
                 color: root._statusColor()
                 Layout.alignment: Qt.AlignVCenter
+                visible: exist_freq
             }
 
             Text {
@@ -410,6 +457,7 @@ Rectangle {
                 font.pixelSize: 10
                 color: "#777777"
                 Layout.alignment: Qt.AlignVCenter
+                visible: exist_freq
             }
 
             // Прогресс-бар загрузки по току
@@ -418,7 +466,7 @@ Rectangle {
                 Layout.preferredHeight: 6
                 radius: 3
                 color: "#d3d3d3"
-
+                visible: exist_freq
                 Rectangle {
                     id: progressBar
                     width: root.nominalLoad > 0
@@ -441,4 +489,5 @@ Rectangle {
             }
         }
     }
+
 }
